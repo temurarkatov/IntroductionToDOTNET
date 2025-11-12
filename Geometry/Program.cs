@@ -1,142 +1,111 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
-namespace ScalableGeometryShapes
+namespace NumericTypesInfo
 {
 	class Program
 	{
 		static void Main(string[] args)
 		{
-			Console.Write("Введите размер N (целое число >=1, рекомендуется нечетное для ромба): ");
-			if (!int.TryParse(Console.ReadLine(), out int N) || N < 1)
-			{
-				N = 5; // Значение по умолчанию, если ввод неверный
-				Console.WriteLine($"Неверный ввод, используется N = {N}");
-			}
+			// Список всех числовых типов C# с их обёртками
+			var numericTypes = new (Type type, string wrapperName)[] {
+				(typeof(sbyte), "SByte"),
+				(typeof(byte), "Byte"),
+				(typeof(short), "Int16"),
+				(typeof(ushort), "UInt16"),
+				(typeof(int), "Int32"),
+				(typeof(uint), "UInt32"),
+				(typeof(long), "Int64"),
+				(typeof(ulong), "UInt64"),
+				(typeof(float), "Single"),
+				(typeof(double), "Double"),
+				(typeof(decimal), "Decimal")
+			};
 
-			// Фигура 1: Квадрат N x N из звёздочек
-			Console.WriteLine("\n1)");
-			for (int i = 0; i < N; i++)
-			{
-				for (int j = 0; j < N; j++)
-				{
-					Console.Write("* ");
-				}
-				Console.WriteLine();
-			}
-			Console.WriteLine();
+			Console.WriteLine("Информация о числовых типах C#:");
+			Console.WriteLine("---------------------------------------------------");
 
-			// Фигура 2: Правый треугольник (увеличивающийся слева)
-			Console.WriteLine("2)");
-			for (int i = 1; i <= N; i++)
+			foreach (var (type, wrapperName) in numericTypes)
 			{
-				for (int j = 0; j < i; j++)
-				{
-					Console.Write("* ");
-				}
-				Console.WriteLine();
-			}
-			Console.WriteLine();
+				// Используем Marshal.SizeOf как безопасный аналог sizeof()
+				// Примечание: оператор sizeof() требует unsafe-контекста, но Marshal.SizeOf работает без него
+				int size = Marshal.SizeOf(type);
 
-			// Фигура 3: Левый треугольник (уменьшающийся слева)
-			Console.WriteLine("3)");
-			for (int i = N; i > 0; i--)
-			{
-				for (int j = 0; j < i; j++)
-				{
-					Console.Write("* ");
-				}
-				Console.WriteLine();
-			}
-			Console.WriteLine();
+				// Альтернатива с оператором sizeof(): закомментирована, чтобы код компилировался без unsafe
+				// Если хотите использовать sizeof(), раскомментируйте и включите unsafe в проекте
+				// int size =UnsafeSizeOf(type); // требуется <AllowUnsafeBlocks>true</AllowUnsafeBlocks> в .csproj
 
-			// Фигура 4: Правый треугольник с отступами (сдвиг вправо)
-			Console.WriteLine("4)");
-			for (int i = 0; i < N; i++)
-			{
-				// Отступы
-				for (int j = 0; j < i; j++)
-				{
-					Console.Write("  ");
-				}
-				// Звёздочки (уменьшающиеся)
-				for (int k = N - i; k > 0; k--)
-				{
-					Console.Write("* ");
-				}
-				Console.WriteLine();
-			}
-			Console.WriteLine();
+				// Получаем Мин/Макс через классы-обёртки из System (например, System.Int32)
+				object minValue = GetMinValue(wrapperName);
+				object maxValue = GetMaxValue(wrapperName);
 
-			// Фигура 5: Левый треугольник с отступами (сдвиг влево, но с отступами справа? По примеру - отступы слева, звёзды слева)
-			// По примеру: отступы увеличиваются слева, звёзды растут слева
-			Console.WriteLine("5)");
-			for (int i = 0; i < N; i++)
-			{
-				// Отступы слева (уменьшающиеся)
-				for (int j = N - 1 - i; j > 0; j--)
-				{
-					Console.Write("  ");
-				}
-				// Звёздочки (увеличивающиеся)
-				for (int k = 0; k <= i; k++)
-				{
-					Console.Write("* ");
-				}
-				Console.WriteLine();
-			}
-			Console.WriteLine();
-
-			// Фигура 6: Ромб (алмаз) с косыми линиями, высота 2N
-			Console.WriteLine("6)");
-			// Верхняя половина (включая середину)
-			for (int i = 0; i < N; i++)
-			{
-				// Отступы слева
-				for (int j = N - i - 1; j > 0; j--)
-				{
-					Console.Write(" ");
-				}
-				Console.Write("/");
-				// Внутренние пробелы
-				for (int j = 0; j < 2 * i; j++)
-				{
-					Console.Write(" ");
-				}
-				Console.Write("\\");
-				Console.WriteLine();
-			}
-			// Нижняя половина
-			for (int i = N - 1; i > 0; i--)
-			{
-				// Отступы слева
-				for (int j = N - i; j > 0; j--)
-				{
-					Console.Write(" ");
-				}
-				Console.Write("\\");
-				// Внутренние пробелы
-				for (int j = 0; j < 2 * (i - 1); j++)
-				{
-					Console.Write(" ");
-				}
-				Console.Write("/");
-				Console.WriteLine();
-			}
-			Console.WriteLine();
-
-			// Фигура 7: Шахматный паттерн N x N с + и -
-			Console.WriteLine("7)");
-			for (int i = 0; i < N; i++)
-			{
-				for (int j = 0; j < N; j++)
-				{
-					if ((i + j) % 2 == 0)
-						Console.Write("+ ");
-					else
-						Console.Write("- ");
-				}
-				Console.WriteLine();
+				Console.WriteLine($"Тип: {type.Name}");
+				Console.WriteLine($"  Размер (bytes): {size} байт");
+				Console.WriteLine($"  Мин. значение: {minValue}");
+				Console.WriteLine($"  Макс. значение: {maxValue}");
+				Console.WriteLine("---------------------------------------------------");
 			}
 		}
+
+		// Метод для получения минимального значения через классы-обёртки
+		static object GetMinValue(string wrapperName)
+		{
+			switch (wrapperName)
+			{
+				case "SByte": return SByte.MinValue;
+				case "Byte": return Byte.MinValue;
+				case "Int16": return Int16.MinValue;
+				case "UInt16": return UInt16.MinValue;
+				case "Int32": return Int32.MinValue;
+				case "UInt32": return UInt32.MinValue;
+				case "Int64": return Int64.MinValue;
+				case "UInt64": return UInt64.MinValue;
+				case "Single": return Single.MinValue;
+				case "Double": return Double.MinValue;
+				case "Decimal": return Decimal.MinValue;
+				default: return null;
+			}
+		}
+
+		// Метод для получения максимального значения через классы-обёртки
+		static object GetMaxValue(string wrapperName)
+		{
+			switch (wrapperName)
+			{
+				case "SByte": return SByte.MaxValue;
+				case "Byte": return Byte.MaxValue;
+				case "Int16": return Int16.MaxValue;
+				case "UInt16": return UInt16.MaxValue;
+				case "Int32": return Int32.MaxValue;
+				case "UInt32": return UInt32.MaxValue;
+				case "Int64": return Int64.MaxValue;
+				case "UInt64": return UInt64.MaxValue;
+				case "Single": return Single.MaxValue;
+				case "Double": return Double.MaxValue;
+				case "Decimal": return Decimal.MaxValue;
+				default: return null;
+			}
+		}
+
+		// Заглушка для sizeof() с использованием unsafe (закомментирована для безопасной компиляции)
+		// Если хотите использовать оператор sizeof(), раскомментируйте, добавьте unsafe в сигнатуру метода
+		// и включите <AllowUnsafeBlocks>true</AllowUnsafeBlocks> в .csproj файле проекта
+		/*
+        unsafe static int UnsafeSizeOf(Type type)
+        {
+            if (type == typeof(sbyte)) return sizeof(sbyte);
+            if (type == typeof(byte)) return sizeof(byte);
+            if (type == typeof(short)) return sizeof(short);
+            if (type == typeof(ushort)) return sizeof(ushort);
+            if (type == typeof(int)) return sizeof(int);
+            if (type == typeof(uint)) return sizeof(uint);
+            if (type == typeof(long)) return sizeof(long);
+            if (type == typeof(ulong)) return sizeof(ulong);
+            if (type == typeof(float)) return sizeof(float);
+            if (type == typeof(double)) return sizeof(double);
+            if (type == typeof(decimal)) return sizeof(decimal);
+            return 0;
+        }
+        */
 	}
 }
