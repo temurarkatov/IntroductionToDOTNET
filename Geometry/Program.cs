@@ -1,189 +1,109 @@
-﻿//#define CALC_IF
-//#define CALC_SWITCH
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
-namespace Calculator
+namespace FileIOExample
 {
+	public class Group
+	{
+		private List<Fraction> fractions;
+
+		public Group()
+		{
+			fractions = new List<Fraction>();
+		}
+
+		public void AddFraction(Fraction f)
+		{
+			fractions.Add(f);
+		}
+
+		public List<Fraction> GetFractions()
+		{
+			return new List<Fraction>(fractions);
+		}
+
+		// Доработанный ToString() — возвращает список в формате [3/4, -1/2]
+		public override string ToString()
+		{
+			if (fractions.Count == 0) return "[]"; // Пустая группа
+			string result = "[";
+			for (int i = 0; i < fractions.Count; i++)
+			{
+				result += fractions[i].ToString();
+				if (i < fractions.Count - 1) result += ", ";
+			}
+			result += "]";
+			return result;
+		}
+
+		// Запись группы в файл с использованием System.IO.StreamWriter
+		public void SaveToFile(string filePath)
+		{
+			try
+			{
+				using (StreamWriter writer = new StreamWriter(filePath))
+				{
+					foreach (var f in fractions)
+					{
+						writer.WriteLine(f.ToString()); // Использует ToString() дроби
+					}
+				}
+				Console.WriteLine($"Группа сохранена в файл: {filePath}");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Ошибка при сохранении файла: {ex.Message}");
+			}
+		}
+
+		// Загрузка группы из файла с использованием System.IO.StreamReader
+		public void LoadFromFile(string filePath)
+		{
+			fractions.Clear();
+			try
+			{
+				using (StreamReader reader = new StreamReader(filePath))
+				{
+					string? line;
+					while ((line = reader.ReadLine()) != null)
+					{
+						if (!string.IsNullOrWhiteSpace(line))
+						{
+							fractions.Add(new Fraction(line)); // Парсит ToString() обратно в Fraction
+						}
+					}
+				}
+				Console.WriteLine($"Группа загружена из файла: {filePath}");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Ошибка при загрузке файла: {ex.Message}");
+			}
+		}
+	}
+
 	class Program
 	{
-		static string expression = "";
-		static readonly char[] operators = new char[] { '+', '-', '*', '/' };
-		static string[] operands;
-		static double[] values;
-		static readonly char[] digits = "0123456789.".ToCharArray();
-		static string[] operations;
 		static void Main(string[] args)
 		{
-			Console.Write("Введите арифметическое выражение: ");
-			//string expression = "22*33/44/2*8*3";
-			expression = "5 + (1 + (2 + (22 + 3)*2 + (33 - 44))/(2 + 8)*3 + 1)*2 - 2";
-			//expression = "(4*(2+3) + (3+2)*4)*3";
-			//expression = "(11 + (55+(22+33)/4-5)*2*3+3)*(3+2)";
-			expression = "5 + (1 + (2 + (22 + 3)*2 + (33 + 44))/(2 + 8)*3 + 1)*2 - 2";
-			//expression = "22+33-44/2+8*3+1";
-			//expression = Console.ReadLine();
-			expression = expression.Replace(",", ".");
-			expression = expression.Replace(" ", "");
-			Console.WriteLine(expression);
+			Group group = new Group();
+			group.AddFraction(new Fraction(3, 4));
+			group.AddFraction(new Fraction(-1, 2));
+			group.AddFraction(new Fraction(5));
 
-			operands = expression.Split(operators);
-			values = new double[operands.Length];
-			for (int i = 0; i < operands.Length; i++)
-			{
-				values[i] = Convert.ToDouble(operands[i]);
-				Console.Write($"{values[i]}\t");
-			}
-			Console.WriteLine();
+			Console.WriteLine("Исходная группа: " + group.ToString()); // Вызывает доработанный ToString()
 
-			/*for (int i = 0; i < digits.Length; i++)
-			{
-				Console.Write($"{digits[i]}\t");
-			}
-			Console.WriteLine();*/
-			//Console.WriteLine(expression);
+			string filePath = "group.txt";
+			group.SaveToFile(filePath);
 
-			operations = expression.Split(digits);
-			operations = operations.Where(operation => operation != "").ToArray();  //LINQ
-			/*for (int i = 0; i < operations.Length; i++)
-			{
-				Console.Write($"{operations[i]}\t");
-			}
-			Console.WriteLine();*/
+			Group loadedGroup = new Group();
+			loadedGroup.LoadFromFile(filePath);
 
-			Console.WriteLine(Calculate(expression));
+			Console.WriteLine("Загруженная группа: " + loadedGroup.ToString());
 
-			Console.WriteLine(Explorer(expression));
-			Console.WriteLine(expression);
-
-#if CALC_IF
-			if (expression.Contains("+"))
-				Console.WriteLine($"{values[0]} + {values[1]} = {values[0] + values[1]}");
-			else if (expression.Contains("-"))
-				Console.WriteLine($"{values[0]} - {values[1]} = {values[0] - values[1]}");
-			else if (expression.Contains("*"))
-				Console.WriteLine($"{values[0]} * {values[1]} = {values[0] * values[1]}");
-			else if (expression.Contains("/"))
-				Console.WriteLine($"{values[0]} / {values[1]} = {values[0] / values[1]}");
-			else Console.WriteLine("Error: No operation"); 
-#endif
-
-#if CALC_SWITCH
-			switch (expression[expression.IndexOfAny(operators)])
-			{
-				case '+': Console.WriteLine($"{values[0]} + {values[1]} = {values[0] + values[1]}"); break;
-				case '-': Console.WriteLine($"{values[0]} - {values[1]} = {values[0] - values[1]}"); break;
-				case '*': Console.WriteLine($"{values[0]} * {values[1]} = {values[0] * values[1]}"); break;
-				case '/': Console.WriteLine($"{values[0]} / {values[1]} = {values[0] / values[1]}"); break;
-			} 
-#endif
-
-		}
-		static string Explorer(string expression)
-		{
-			for (int i = 0; i < expression.Length; i++)
-			{
-				if (expression[i] == '(')
-				{
-					for (int j = i + 1; j < expression.Length; j++)
-					{
-						if (expression[j] == ')')
-						{
-							string substring = expression.Substring(i + 1, j - i - 1);
-							//if (expression.Count(s => s == '(') != expression.Count(s => s == ')')) return substring;//expression.Substring(0,j);
-							//double local_result = Calculate(substring.Substring(1, substring.Length - 2));
-							//expression = expression.Replace(substring, local_result.ToString());
-							//break;
-							if (!substring.Contains('(') && !substring.Contains(')'))
-							{
-								double result = Calculate(substring);
-								Program.expression = Program.expression.Replace($"({substring})", result.ToString());
-								Explorer(Program.expression);
-							}
-						}
-						if (expression[j] == '(')
-						{
-							//string substring = Explorer(expression.Substring(j));
-							//Program.expression = expression.Replace(substring, Calculate(substring.Substring(1, substring.Length-2)).ToString());
-							string substring = expression.Substring(j + 1, expression.Length - j - 1);
-							Explorer(substring);
-						}
-					}
-				}
-				if (expression[i] == ')')
-				{
-					string substring = expression.Substring(0, i);
-					if (!substring.Contains('(') && !substring.Contains(')'))
-					{
-						double result = Calculate(substring);
-						Program.expression = Program.expression.Replace($"({substring})", result.ToString());
-					}
-					Explorer(Program.expression);
-				}
-			}
-			return Calculate(Program.expression).ToString();
-		}
-		static double Calculate(string expression)
-		{
-			operands = expression.Split(operators);
-			values = new double[operands.Length];
-			for (int i = 0; i < operands.Length; i++)
-			{
-				values[i] = Convert.ToDouble(operands[i]);
-				Console.Write($"{values[i]}\t");
-			}
-			Console.WriteLine();
-
-			/*for (int i = 0; i < digits.Length; i++)
-			{
-				Console.Write($"{digits[i]}\t");
-			}
-			Console.WriteLine();*/
-
-			operations = expression.Split(digits);
-			operations = operations.Where(operation => operation != "").ToArray();  //LINQ
-			/*for (int i = 0; i < operations.Length; i++)
-			{
-				Console.Write($"{operations[i]}\t");
-			}
-			Console.WriteLine();*/
-
-			while (operations[0] != "")
-			{
-				//int i = 0;
-				for (int i = 0; i < operations.Length; i++)
-				{
-					if (operations[i] == "*" || operations[i] == "/")
-					{
-						if (operations[i] == "*") values[i] *= values[i + 1];
-						if (operations[i] == "/") values[i] /= values[i + 1];
-						Shift(i);
-						if (operations[i] == "*" || operations[i] == "/") i--;
-					}
-				}
-				for (int i = 0; i < operations.Length; i++)
-				{
-					if (operations[i] == "+" || operations[i] == "-")
-					{
-						if (operations[i] == "+") values[i] += values[i + 1];
-						if (operations[i] == "-") values[i] -= values[i + 1];
-						Shift(i);
-						if (operations[i] == "+" || operations[i] == "-") i--;
-					}
-				}
-			}
-			//Console.WriteLine(values[0]);
-			return values[0];
-		}
-		static void Shift(int index)
-		{
-			for (int i = index; i < operations.Length - 1; i++) operations[i] = operations[i + 1];
-			for (int i = index + 1; i < values.Length - 1; i++) values[i] = values[i + 1];
-			operations[operations.Length - 1] = "";
-			values[values.Length - 1] = 0;
+			Console.WriteLine("Нажмите любую клавишу для выхода...");
+			Console.ReadKey();
 		}
 	}
 }
