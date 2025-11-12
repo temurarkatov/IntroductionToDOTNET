@@ -1,109 +1,63 @@
 ﻿using System;
+//#define ABSTRACT_1
+using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Drawing;
+using System.Runtime.InteropServices;   //DllImport
+using System.Windows.Forms;
 
-namespace FileIOExample
+namespace AbstractGeometry
 {
-	public class Group
-	{
-		private List<Fraction> fractions;
-
-		public Group()
-		{
-			fractions = new List<Fraction>();
-		}
-
-		public void AddFraction(Fraction f)
-		{
-			fractions.Add(f);
-		}
-
-		public List<Fraction> GetFractions()
-		{
-			return new List<Fraction>(fractions);
-		}
-
-		// Доработанный ToString() — возвращает список в формате [3/4, -1/2]
-		public override string ToString()
-		{
-			if (fractions.Count == 0) return "[]"; // Пустая группа
-			string result = "[";
-			for (int i = 0; i < fractions.Count; i++)
-			{
-				result += fractions[i].ToString();
-				if (i < fractions.Count - 1) result += ", ";
-			}
-			result += "]";
-			return result;
-		}
-
-		// Запись группы в файл с использованием System.IO.StreamWriter
-		public void SaveToFile(string filePath)
-		{
-			try
-			{
-				using (StreamWriter writer = new StreamWriter(filePath))
-				{
-					foreach (var f in fractions)
-					{
-						writer.WriteLine(f.ToString()); // Использует ToString() дроби
-					}
-				}
-				Console.WriteLine($"Группа сохранена в файл: {filePath}");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Ошибка при сохранении файла: {ex.Message}");
-			}
-		}
-
-		// Загрузка группы из файла с использованием System.IO.StreamReader
-		public void LoadFromFile(string filePath)
-		{
-			fractions.Clear();
-			try
-			{
-				using (StreamReader reader = new StreamReader(filePath))
-				{
-					string? line;
-					while ((line = reader.ReadLine()) != null)
-					{
-						if (!string.IsNullOrWhiteSpace(line))
-						{
-							fractions.Add(new Fraction(line)); // Парсит ToString() обратно в Fraction
-						}
-					}
-				}
-				Console.WriteLine($"Группа загружена из файла: {filePath}");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Ошибка при загрузке файла: {ex.Message}");
-			}
-		}
-	}
-
 	class Program
 	{
 		static void Main(string[] args)
 		{
-			Group group = new Group();
-			group.AddFraction(new Fraction(3, 4));
-			group.AddFraction(new Fraction(-1, 2));
-			group.AddFraction(new Fraction(5));
+			IntPtr hwnd = GetConsoleWindow();
+			Graphics graphics = Graphics.FromHwnd(hwnd);
+			System.Drawing.Rectangle window_rect = new System.Drawing.Rectangle
+				(
+				Console.WindowLeft, Console.WindowTop,
+				Console.WindowWidth, Console.WindowHeight
+				);
+			PaintEventArgs e = new PaintEventArgs(graphics, window_rect);
+			//e.Graphics.DrawRectangle(new Pen(Color.Red), 300, 100, 500, 300);
 
-			Console.WriteLine("Исходная группа: " + group.ToString()); // Вызывает доработанный ToString()
+#if ABSTRACT_1
+			Rectangle rectangle = new Rectangle(100, 40, 300, 50, 3, Color.AliceBlue);
+			rectangle.Info(e);
 
-			string filePath = "group.txt";
-			group.SaveToFile(filePath);
+			Square square = new Square(50, 500, 50, 5, Color.Red);
+			square.Info(e);
 
-			Group loadedGroup = new Group();
-			loadedGroup.LoadFromFile(filePath);
+			Circle circle = new Circle(100, 700, 50, 5, Color.Yellow);
+			circle.Info(e);
 
-			Console.WriteLine("Загруженная группа: " + loadedGroup.ToString());
+			IsoscelesTriangle iso = new IsoscelesTriangle(75, 150, 400, 200, 3, Color.Green);
+			iso.Info(e);
 
-			Console.WriteLine("Нажмите любую клавишу для выхода...");
-			Console.ReadKey();
+			EquilateralTriangle equ = new EquilateralTriangle(50, 550, 200, 4, Color.Green);
+			equ.Info(e);
+			equ.Info(e); 
+#endif
+
+			Shape[] shapes =
+			{
+				new Rectangle(100, 40, 300, 50, 3, Color.AliceBlue),
+				new Square(50, 500, 50, 5, Color.Red),
+				new Circle(100, 700, 50, 5, Color.Yellow),
+				new IsoscelesTriangle(75, 150, 400, 200, 3, Color.Green),
+				new EquilateralTriangle(50, 550, 200, 4, Color.Green)
+			};
+			for (int i = 0; i < shapes.Length; i++)
+			{
+				if (!(shapes[i] is IHaveDiagonal))
+					shapes[i].Draw(e);
+			}
 		}
+		[DllImport("kernel32.dll")]
+		public static extern IntPtr GetConsoleWindow();
 	}
 }
